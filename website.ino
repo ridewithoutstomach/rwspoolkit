@@ -1,5 +1,5 @@
 /* *****************************************************************
-   RWS Pool-Kit v6.3
+   RWS Pool-Kit v6.4
    Copyright (c) 2022-2026 Ridewithoutstomach
    https://rws.casa-eller.de
    https://github.com/ridewithoutstomach/rwspoolkit
@@ -666,6 +666,7 @@ void handleForm() {
       summer = false;
       utcOffsetInSeconds = 3600;
     }
+    timeClient.setTimeOffset(utcOffsetInSeconds);
 
     // 24 Timer auslesen
     // Checkboxen: nicht angehakte werden NICHT gesendet, daher erstmal alle auf false
@@ -768,7 +769,7 @@ void handleRoot() {
                    "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                    "</head>\n");
       message += F("<body>\n");
-      message += F("<header>\n<h1>RWS Pool-KIT (V6.3)</h1>\n</header>\n<main>\n");
+      message += F("<header>\n<h1>RWS Pool-KIT (V6.4)</h1>\n</header>\n<main>\n");
       message += F("<h2><center>WiFi Konfiguration</h2>");
       message += F("<center><form method='POST' action='/wifisave'><table>");
 
@@ -809,13 +810,13 @@ void handleRoot() {
       message =  F("<!DOCTYPE html>\n"
                    "<html lang='en'>\n"
                    "<head>\n"
-                   "<title>RWS POOL-Kit V6.3</title>\n"
+                   "<title>RWS POOL-Kit V6.4</title>\n"
                    "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n"
                    "<meta name=\"viewport\" content=\"width=device-width\">\n"
                    "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                    "</head>\n");
       message += F("<body>\n");
-      message += F("<header>\n<h1><center>RWS Pool-Kit V6.3</center></h1>\n"
+      message += F("<header>\n<h1><center>RWS Pool-Kit V6.4</center></h1>\n"
                    "<nav><p></p></nav>\n</header>\n"
                    "<main>\n");
       message += F("<h2><center>Login!</h2>");
@@ -1056,7 +1057,7 @@ void addTop(String &message)
                "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                "</head>\n");
   message += F("<body>\n");
-  message += F("<header>\n<h1>RWS Pool-KIT (V6.3)</h1>\n"
+  message += F("<header>\n<h1>RWS Pool-KIT (V6.4)</h1>\n"
                "<nav><center><p>"
                "<a href=\"/\" class=\"button3\">Dashboard</a>"
                "<a href=\"pool.htm\" class=\"button3\">Pool&Pump</a>"
@@ -1089,7 +1090,7 @@ void addTop2(String &message)
                "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                "</head>\n");
   message += F("<body>\n");
-  message += F("<header>\n<h1>RWS Pool-KIT (V6.3)</h1>\n"
+  message += F("<header>\n<h1>RWS Pool-KIT (V6.4)</h1>\n"
                "</center><main>\n");
 }
 
@@ -1098,7 +1099,7 @@ void addBottom(String &message) {
   message += F("</main>\n"
                "<footer>\n<p>");
   message += F("<span id='min'>");
-  message += ("&nbsp; RWS Pool-KIT V6.3 - (c)2021-2026 Bernd Eller <br>");
+  message += ("&nbsp; RWS Pool-KIT V6.4 - (c)2021-2026 Bernd Eller <br>");
   message += ("&nbsp; uptime: ");
   message += uptime_formatter::getUptime();
   server.send(200, "text/html", message);

@@ -1,5 +1,5 @@
 /* *****************************************************************
-   RWS Pool-Kit v6.3
+   RWS Pool-Kit v6.4
    Copyright (c) 2022-2026 Ridewithoutstomach
    https://rws.casa-eller.de
    https://github.com/ridewithoutstomach/rwspoolkit
@@ -135,16 +135,8 @@ void timer2(){
       Serial.println("WARNUNG: NTP noch nicht synchronisiert - Timer laeuft mit 0:00");
     }
 
-    // Umrechnung UTC Zeit in minute_of_day
-    int minute_of_day;
-    if ( summer == true ){
-       minute_of_day = (timeClient.getHours() * 60 + timeClient.getMinutes() + 60);
-    }
-    else{
-       minute_of_day = (timeClient.getHours() * 60 + timeClient.getMinutes());
-    }
-    // Mitternachts-Korrektur (Sommerzeit kann ueber 1440 gehen)
-    if (minute_of_day >= 1440) minute_of_day -= 1440;
+    // Umrechnung aktuelle Zeit in minute_of_day
+    int minute_of_day = (timeClient.getHours() * 60 + timeClient.getMinutes());
 
     Serial.print("minute_of_day = ");
     Serial.println(minute_of_day);

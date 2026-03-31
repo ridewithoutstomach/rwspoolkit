@@ -1,5 +1,5 @@
 /* *****************************************************************
-   RWS Pool-Kit v6.3
+   RWS Pool-Kit v6.4
    Copyright (c) 2022-2026 Ridewithoutstomach
    https://rws.casa-eller.de
    https://github.com/ridewithoutstomach/rwspoolkit
@@ -458,9 +458,10 @@ if ( summer == true ){
   Serial.println("Summertime");
 }
 else{
-  utcOffsetInSeconds = 3600;  
+  utcOffsetInSeconds = 3600;
   Serial.println("Wintertime");
 }
+timeClient.setTimeOffset(utcOffsetInSeconds);
 
 // haben wir eine 3Speed Pumpe ?
 
