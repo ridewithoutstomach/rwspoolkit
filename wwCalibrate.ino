@@ -1,5 +1,5 @@
 /* *****************************************************************
-   RWS Pool-Kit v6.4
+   RWS Pool-Kit v6.5
    Copyright (c) 2022-2026 Ridewithoutstomach
    https://rws.casa-eller.de
    https://github.com/ridewithoutstomach/rwspoolkit
@@ -80,6 +80,11 @@ String message;
   message += F("</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"submit\" value=\"Submit\"></td></form></tr>");
 
   message += F("</table>");
+
+  message += F("<br><br><center>");
+  message += F("<a href=\"maintenance.htm\" class=\"button3\" style=\"background:#c00;color:white;font-weight:bold;padding:12px 20px;\">");
+  message += F("&#9881; EZO Maintenance (I2C Scan / UART &rarr; I2C Switch)");
+  message += F("</a></center><br>");
 
 /*  message += F("<tr><td>&nbsp; PH-Plus-MixTime (min): &nbsp;</td>");
   message += F("<td>&nbsp;<input type=\"number\" min=\"0\" name=\"check_phPlus_interval_delay\" value= ");

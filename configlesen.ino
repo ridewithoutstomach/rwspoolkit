@@ -1,5 +1,5 @@
 /* *****************************************************************
-   RWS Pool-Kit v6.4
+   RWS Pool-Kit v6.5
    Copyright (c) 2022-2026 Ridewithoutstomach
    https://rws.casa-eller.de
    https://github.com/ridewithoutstomach/rwspoolkit
@@ -234,9 +234,11 @@ void write_phminuspmp(){
         file.write(reinterpret_cast<uint8_t*>(&phminus_dblchk), sizeof(phminus_dblchk));
         file.write(reinterpret_cast<uint8_t*>(&phminus_dblchk_counter), sizeof(phminus_dblchk_counter));
         file.write(reinterpret_cast<uint8_t*>(&password_phminus), sizeof(password_phminus));
+        file.write(reinterpret_cast<uint8_t*>(&ph_mean_window), sizeof(ph_mean_window));
+        file.write(reinterpret_cast<uint8_t*>(&ph_spike_threshold), sizeof(ph_spike_threshold));
 
         file.close();
-   
+
 }
 
 
@@ -253,11 +255,16 @@ void read_phminuspmp(){
         file.read(reinterpret_cast<uint8_t*>(&phminus_dblchk), sizeof(phminus_dblchk));
         file.read(reinterpret_cast<uint8_t*>(&phminus_dblchk_counter), sizeof(phminus_dblchk_counter));
         file.read(reinterpret_cast<uint8_t*>(&password_phminus), sizeof(password_phminus));
-        
+        // Neu ab PH-Filter: optional, Fallback auf Defaults wenn Datei noch aus alter Version stammt
+        if (file.available() >= (int)sizeof(ph_mean_window))
+          file.read(reinterpret_cast<uint8_t*>(&ph_mean_window), sizeof(ph_mean_window));
+        if (file.available() >= (int)sizeof(ph_spike_threshold))
+          file.read(reinterpret_cast<uint8_t*>(&ph_spike_threshold), sizeof(ph_spike_threshold));
+
         file.close();
         //strcpy(check_phMinus_interval_delay_std, check_phMinus_interval_delay);
         phminus_dblchk_counter_read = phminus_dblchk_counter;
-  }                           
+  }
 }
 
 void write_heater(){

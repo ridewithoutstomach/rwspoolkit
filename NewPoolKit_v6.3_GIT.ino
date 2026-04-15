@@ -1,5 +1,5 @@
 /* *****************************************************************
-   RWS Pool-Kit v6.4
+   RWS Pool-Kit v6.5
    Copyright (c) 2022-2026 Ridewithoutstomach
    https://rws.casa-eller.de
    https://github.com/ridewithoutstomach/rwspoolkit
@@ -48,7 +48,8 @@
 #include <sequencer1.h>                                          
 #include <Ezo_i2c_util.h>                                        
 #include <Ezo_i2c.h>                                             
-#include <Wire.h>    
+#include <Wire.h>
+#include <SoftwareSerial.h>    // fuer EZO UART->I2C Switch in wwMaintenance.ino
 
 // OTA
 #include <ESP8266mDNS.h>
@@ -188,6 +189,19 @@ char phminus_fuellstand[16] {"0.00"};
 char phminus_dosiermenge[15] {"0.00"};
 char password_phminus[60] {""};
 const char* datei_phminuspmp = "/phminuspmp.cfg";
+
+// PH-Filter (gleitender Mittelwert + Spike-Rejection)
+// Fensterlaenge in Sekunden, Default = MixTime (wird in setup() angepasst)
+char ph_mean_window[15]     {"600"};    // Sekunden, max = check_phMinus_interval_delay * 60
+char ph_spike_threshold[10] {"0.50"};   // pH, max. erlaubte Abweichung vom gleitenden Mittelwert
+#define PH_BUF_MAX 900                  // 900 Samples * 2s Polling = 1800s = 30min max Fenster
+float    ph_buf[PH_BUF_MAX];
+uint16_t ph_buf_size  = 0;              // effektive Puffergroesse (aus ph_mean_window / polling_delay)
+uint16_t ph_buf_idx   = 0;              // Schreibposition im Ringpuffer
+uint16_t ph_buf_count = 0;              // aktueller Fuellstand (0..ph_buf_size)
+float    ph_filtered  = 0.0;            // aktueller gleitender Mittelwert
+bool     ph_filter_init_done = false;   // erster plausibler Wert bereits aufgenommen?
+uint16_t ph_spike_count = 0;            // Diagnose: Anzahl verworfener Samples
 
 bool check_heizung = false;
 bool check_fan = false;
@@ -427,6 +441,7 @@ read_pool();
 read_flow();
 read_chlorinator();
 read_phminuspmp();
+ph_filter_recalc_size();   // PH-Filter Ringpuffer aus geladenen Settings dimensionieren
 read_dht_cal();   // v6.1: AM2315C Offset laden
 init_timers();    // v6.0: Defaults setzen bevor Config geladen wird
 read_timer();
@@ -499,6 +514,7 @@ if ( only_one_pump_speed == true ){
   server.on("/timer.htm", handlePageTimer);
   // server.on("/stats.htm", handleStats);  // v6.0: Stats entfernt (identisch mit Dashboard)
   server.on("/calibration.htm", handleCal);
+  server.on("/maintenance.htm", handlePageMaintenance);
   server.on("/reboot.htm", handleReboot);
   server.on("/logout.htm", handleLogout);
   
@@ -909,6 +925,8 @@ void step4() {
   if (PH.get_error() == Ezo_board::SUCCESS) {                                          //if the PH reading was successful (back in step 1)
     ThingSpeak.setField(1, String(PH.get_last_received_reading(), 2));                 //assign PH readings to the first column of thingspeak channel
     ph_fault_counter = 0;
+    // gleitenden Mittelwert / Spike-Filter fuettern
+    ph_filter_update(PH.get_last_received_reading());
   }
   else if (atol(ph_fault) > 0) {
     Serial.println("----- PH Reading fault! ---- ");

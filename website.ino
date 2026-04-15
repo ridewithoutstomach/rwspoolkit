@@ -1,5 +1,5 @@
 /* *****************************************************************
-   RWS Pool-Kit v6.4
+   RWS Pool-Kit v6.5
    Copyright (c) 2022-2026 Ridewithoutstomach
    https://rws.casa-eller.de
    https://github.com/ridewithoutstomach/rwspoolkit
@@ -222,6 +222,60 @@ void handleForm() {
     }
 
   }
+
+  // ## EZO Maintenance: I2C Scan
+  if ( server.hasArg("maint_scan")) {
+    if ( login ) {
+      maint_i2c_scan();
+      String message;
+      addTop(message);
+      message += F("<br><h3><center><a href=\"maintenance.htm\" class=\"button3\">Scan done.. back to page</a></h3>");
+      server.send(200, "text/html", message);
+    }
+    else {
+      String message;
+      addTop(message);
+      message += F("<br><h1><center><a href=\"/\" class=\"button3\">Login first</a>");
+      server.send(200, "text/html", message);
+    }
+    return;
+  }
+
+  // ## EZO Maintenance: UART -> I2C Switch
+  if ( server.hasArg("maint_switch_slot") && server.hasArg("maint_confirm")) {
+    if ( login ) {
+      int slot_index = server.arg("maint_switch_slot").toInt();
+
+      String log;
+      bool ok = maint_switch_to_i2c(slot_index, log);
+
+      String message;
+      addTop(message);
+      message += F("<h2>EZO Switch</h2>");
+      message += log;
+      if (ok) {
+        message += F("<br><center><b>ESP is rebooting now...</b></center>");
+        message += F("<br><center><small>wait ~10s, then open <a href=\"maintenance.htm\">maintenance.htm</a> again and run 'Scan I2C Bus' to verify.</small></center>");
+      } else {
+        message += F("<br><center><a href=\"maintenance.htm\" class=\"button3\">back to maintenance</a></center>");
+      }
+      addBottom(message);
+      server.send(200, "text/html", message);
+
+      if (ok) {
+        delay(5000);
+        ESP.restart();
+      }
+    }
+    else {
+      String message;
+      addTop(message);
+      message += F("<br><h1><center><a href=\"/\" class=\"button3\">Login first</a>");
+      server.send(200, "text/html", message);
+    }
+    return;
+  }
+
 
   // ## AM2315C Offset Kalibrierung
   if ( server.hasArg("dht_temp_offset")) {
@@ -483,6 +537,23 @@ void handleForm() {
       strcpy(phminus_dblchk, server.arg(5).c_str());
       strcpy(password_phminus, server.arg(6).c_str());
 
+      // PH-Filter: Fensterlaenge (Sekunden) mit Validierung
+      if (server.hasArg("ph_mean_window")) {
+        long win_s = server.arg("ph_mean_window").toInt();
+        long max_win_s = atol(check_phMinus_interval_delay) * 60L;
+        if (win_s < 10) win_s = 10;
+        if (max_win_s < 10) max_win_s = 10;
+        if (win_s > max_win_s) win_s = max_win_s;   // Fenster <= MixTime*60
+        snprintf(ph_mean_window, sizeof(ph_mean_window), "%ld", win_s);
+      }
+      // PH-Filter: Spike-Schwelle (pH) mit Plausi
+      if (server.hasArg("ph_spike_threshold")) {
+        float thr = server.arg("ph_spike_threshold").toFloat();
+        if (thr < 0.05) thr = 0.05;
+        if (thr > 2.0)  thr = 2.0;
+        snprintf(ph_spike_threshold, sizeof(ph_spike_threshold), "%.2f", thr);
+      }
+
       String message;
       addTop(message);
       message += F("<br><h1><center><a href=\"phminus.htm\" class=\"button3\">Safed.. back to page</a>");
@@ -494,6 +565,8 @@ void handleForm() {
       read_phminuspmp();
       phminus_dblchk_counter = 0;
       write_phminuspmp();
+      // Filter-Ringpuffer anhand der (ggf. geaenderten) Fensterlaenge neu dimensionieren
+      ph_filter_recalc_size();
 
       ThingSpeak.setField(String(phminusID).toInt(), phminus_fuellstand);
 
@@ -769,7 +842,7 @@ void handleRoot() {
                    "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                    "</head>\n");
       message += F("<body>\n");
-      message += F("<header>\n<h1>RWS Pool-KIT (V6.4)</h1>\n</header>\n<main>\n");
+      message += F("<header>\n<h1>RWS Pool-KIT (V6.5)</h1>\n</header>\n<main>\n");
       message += F("<h2><center>WiFi Konfiguration</h2>");
       message += F("<center><form method='POST' action='/wifisave'><table>");
 
@@ -810,13 +883,13 @@ void handleRoot() {
       message =  F("<!DOCTYPE html>\n"
                    "<html lang='en'>\n"
                    "<head>\n"
-                   "<title>RWS POOL-Kit V6.4</title>\n"
+                   "<title>RWS POOL-Kit V6.5</title>\n"
                    "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n"
                    "<meta name=\"viewport\" content=\"width=device-width\">\n"
                    "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                    "</head>\n");
       message += F("<body>\n");
-      message += F("<header>\n<h1><center>RWS Pool-Kit V6.4</center></h1>\n"
+      message += F("<header>\n<h1><center>RWS Pool-Kit V6.5</center></h1>\n"
                    "<nav><p></p></nav>\n</header>\n"
                    "<main>\n");
       message += F("<h2><center>Login!</h2>");
@@ -829,6 +902,15 @@ void handleRoot() {
       message += F("<br><br><input type=\"submit\" value=\"Submit\"></form><br></br>");
       message += F("PH: ");
       message += PH.get_last_received_reading();
+      message += F("&nbsp; &Oslash;");
+      if (ph_buf_size > 0 && ph_buf_count >= ph_buf_size) {
+        message += String(ph_filtered, 2);
+      } else {
+        message += F("warm-up ");
+        message += ph_buf_count;
+        message += F("/");
+        message += ph_buf_size;
+      }
       message += F("&nbsp; (");
       message += phMinus;
       message += F(") ");
@@ -899,6 +981,15 @@ void handleRoot() {
     message += F("<center>");
     message += F("PH: ");
     message += PH.get_last_received_reading();
+    message += F("&nbsp; &Oslash;");
+    if (ph_buf_size > 0 && ph_buf_count >= ph_buf_size) {
+      message += String(ph_filtered, 2);
+    } else {
+      message += F("warm-up ");
+      message += ph_buf_count;
+      message += F("/");
+      message += ph_buf_size;
+    }
     message += F("&nbsp; (");
     message += phMinus;
     message += F(") ");
@@ -1057,7 +1148,7 @@ void addTop(String &message)
                "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                "</head>\n");
   message += F("<body>\n");
-  message += F("<header>\n<h1>RWS Pool-KIT (V6.4)</h1>\n"
+  message += F("<header>\n<h1>RWS Pool-KIT (V6.5)</h1>\n"
                "<nav><center><p>"
                "<a href=\"/\" class=\"button3\">Dashboard</a>"
                "<a href=\"pool.htm\" class=\"button3\">Pool&Pump</a>"
@@ -1090,7 +1181,7 @@ void addTop2(String &message)
                "<link rel='stylesheet' type='text/css' href='/style.css'>\n"
                "</head>\n");
   message += F("<body>\n");
-  message += F("<header>\n<h1>RWS Pool-KIT (V6.4)</h1>\n"
+  message += F("<header>\n<h1>RWS Pool-KIT (V6.5)</h1>\n"
                "</center><main>\n");
 }
 
@@ -1099,7 +1190,7 @@ void addBottom(String &message) {
   message += F("</main>\n"
                "<footer>\n<p>");
   message += F("<span id='min'>");
-  message += ("&nbsp; RWS Pool-KIT V6.4 - (c)2021-2026 Bernd Eller <br>");
+  message += ("&nbsp; RWS Pool-KIT V6.5 - (c)2021-2026 Bernd Eller <br>");
   message += ("&nbsp; uptime: ");
   message += uptime_formatter::getUptime();
   server.send(200, "text/html", message);
