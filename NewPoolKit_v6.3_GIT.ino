@@ -161,10 +161,11 @@ const char* datei_pool = "/pool.cfg";
 
 
 
-bool check_flow  = false;
+bool check_flow  = false;      // aktiv = Flow-Zustand als Dosier-Gate benutzen
+bool flow_show   = false;      // aktiv = Flow im Dashboard anzeigen (unabh. von Dosier-Gate)
 char flowcontrol_delay[15] {"2"};                   // in Secunden - Muss umgerechnet werden
-char hostname_flowcontrol[60] {"flowcontrol_shelly"}; 
-char password_flowcontrol[60] {""};  
+char hostname_flowcontrol[60] {"flowcontrol_shelly"};
+char password_flowcontrol[60] {""};
 const char* datei_flow = "/flow.cfg";
 
 bool check_chlorinator = false;
@@ -722,7 +723,9 @@ void loop() {
   Timer_seq.run();
 
   
-  if (check_flow) check_flowcontrol.run();
+  // Flow-Shelly wird gepollt wenn entweder der Dashboard-Show-Schalter
+  // oder der Dosier-Gate-Schalter aktiv ist. Sonst kein HTTP-Traffic.
+  if (check_flow || flow_show) check_flowcontrol.run();
 
      // Reboot 
      currentMillis = millis();

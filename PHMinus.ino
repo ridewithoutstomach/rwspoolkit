@@ -127,7 +127,8 @@ void check_phMinus(){
     //if (PH.get_last_received_reading() < atof(phMinus)){      // Wenn wir über Sollwert sind dann phminus an 
 
     
-    if (ph_filtered > atof(phMinus) && pumpe_on == true ){      // Wenn wir über Sollwert sind dann phminus an (gefilterter Mittelwert!)
+    // Dosier-Bedingung: pH zu hoch UND Pumpe laeuft UND (Flow-Gate aus ODER Flow vorhanden)
+    if (ph_filtered > atof(phMinus) && pumpe_on == true && (!check_flow || flow) ){
    
       phminus_dblchk_counter ++;
       Serial.print("phminus_dblchk_counter=");

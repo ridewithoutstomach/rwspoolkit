@@ -432,16 +432,14 @@ void handleForm() {
 
     delay(100);
     if ( login ) {
-      int z = strcmp(server.arg(0).c_str(), "Yes");
-      if ( z == 0 ) {
-        check_flow = true;
-        strcpy(flowcontrol_delay, server.arg(1).c_str());
-        strcpy(hostname_flowcontrol, server.arg(2).c_str());
-        strcpy(password_flowcontrol, server.arg(3).c_str());
-      }
-      else {
-        check_flow = false;
-      }
+      // Namens-basierter Zugriff, robust gegen Feld-Reihenfolge
+      check_flow = (server.arg("check_flow") == "Yes");
+      flow_show  = (server.arg("flow_show")  == "Yes");
+      // Regel: Dosier-Gate an -> Dashboard-Anzeige automatisch auch an
+      if (check_flow) flow_show = true;
+      if (server.hasArg("flowcontrol_delay"))   strcpy(flowcontrol_delay,   server.arg("flowcontrol_delay").c_str());
+      if (server.hasArg("hostname_flowcontrol")) strcpy(hostname_flowcontrol, server.arg("hostname_flowcontrol").c_str());
+      if (server.hasArg("password_flowcontrol")) strcpy(password_flowcontrol, server.arg("password_flowcontrol").c_str());
 
       delay(100);
       write_flow();
@@ -946,6 +944,7 @@ void handleRoot() {
       message += F(" ]");
 
       message += ("<br>");
+      message += (check_chlorinator ? F("<span style=\"color:#0c0\">&#9679;</span> ") : F("<span style=\"color:#c00\">&#9679;</span> "));
       message += F("ORP_Counter: ");
       message += orp_chk_counter;
       message += F("&nbsp; (");
@@ -953,6 +952,7 @@ void handleRoot() {
       message += F(" * ");
       message += check_orp_interval_delay;
       message += F("s)<br>");
+      message += (check_phminus ? F("<span style=\"color:#0c0\">&#9679;</span> ") : F("<span style=\"color:#c00\">&#9679;</span> "));
       message += F("PHMinus_Counter: ");
       message += phminus_dblchk_counter;
       message += F("&nbsp; (");
@@ -960,9 +960,12 @@ void handleRoot() {
       message += F(" * ");
       message += check_phMinus_interval_delay;
       message += F("min)<br>");
-      message += F("Flow:");
-      message += flow;
-      message += F("<br>");
+      if (flow_show || check_flow) {
+        message += (check_flow ? F("<span style=\"color:#0c0\">&#9679;</span> ") : F("<span style=\"color:#ec0\">&#9679;</span> "));
+        message += F("Flow: ");
+        message += flow;
+        message += F("<br>");
+      }
 
       message += ("<br>");
 
@@ -1024,6 +1027,7 @@ void handleRoot() {
     message += humidity_min;
     message += F(" ]");
     message += ("<br>");
+    message += (check_chlorinator ? F("<span style=\"color:#0c0\">&#9679;</span> ") : F("<span style=\"color:#c00\">&#9679;</span> "));
     message += F("ORP_Counter: ");
     message += orp_chk_counter;
     message += F("&nbsp; (");
@@ -1031,6 +1035,7 @@ void handleRoot() {
     message += F(" * ");
     message += check_orp_interval_delay;
     message += F("s)<br>");
+    message += (check_phminus ? F("<span style=\"color:#0c0\">&#9679;</span> ") : F("<span style=\"color:#c00\">&#9679;</span> "));
     message += F("PHMinus_Counter: ");
     message += phminus_dblchk_counter;
     message += F("&nbsp; (");
@@ -1038,9 +1043,12 @@ void handleRoot() {
     message += F(" * ");
     message += check_phMinus_interval_delay;
     message += F("min)<br>");
-    message += F("Flow:");
-    message += flow;
-    message += F("<br>");
+    if (flow_show || check_flow) {
+      message += (check_flow ? F("<span style=\"color:#0c0\">&#9679;</span> ") : F("<span style=\"color:#ec0\">&#9679;</span> "));
+      message += F("Flow: ");
+      message += flow;
+      message += F("<br>");
+    }
 
     message += ("<br>");
 

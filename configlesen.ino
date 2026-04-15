@@ -158,8 +158,9 @@ void write_flow(){
         file.write(reinterpret_cast<uint8_t*>(&flowcontrol_delay), sizeof(flowcontrol_delay));
         file.write(reinterpret_cast<uint8_t*>(&hostname_flowcontrol), sizeof(hostname_flowcontrol));
         file.write(reinterpret_cast<uint8_t*>(&password_flowcontrol), sizeof(password_flowcontrol));
+        file.write(reinterpret_cast<uint8_t*>(&flow_show), sizeof(flow_show));
         file.close();
-   
+
 }
 
 
@@ -172,6 +173,9 @@ void read_flow(){
         file.read(reinterpret_cast<uint8_t*>(&flowcontrol_delay), sizeof(flowcontrol_delay));
         file.read(reinterpret_cast<uint8_t*>(&hostname_flowcontrol), sizeof(hostname_flowcontrol));
         file.read(reinterpret_cast<uint8_t*>(&password_flowcontrol), sizeof(password_flowcontrol));
+        // Neu: flow_show optional, Fallback Default false bei alter Datei
+        if (file.available() >= (int)sizeof(flow_show))
+          file.read(reinterpret_cast<uint8_t*>(&flow_show), sizeof(flow_show));
         file.close();
                 
   }
