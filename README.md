@@ -1,4 +1,4 @@
-# RWS Pool-Kit v7.0
+# RWS Pool-Kit v7.1
 
 Web-based pool controller built on the **Atlas Scientific Wi-Fi Pool Kit V1.3**.
 
